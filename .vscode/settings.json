@@ -1,3 +1,4 @@
 {
-    "cmake.sourceDirectory": "D:/Users/hp/Desktop/flutter/Motors admin/motorsadmin/linux"
+    "cmake.sourceDirectory": "D:/Users/hp/Desktop/flutter/Motors admin/motorsadmin/linux",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
