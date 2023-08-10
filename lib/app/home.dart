@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:intl/intl.dart';
 import 'package:motorsadmin/tools/dailog2.dart';
 import 'package:motorsadmin/tools/menu.dart';
@@ -25,6 +26,7 @@ class _HomeState extends State<Home> {
   final apiurl = dotenv.get('API_URL');
   final getcar = dotenv.get('API_URL_GET');
   final getsearch = dotenv.get('API_URL_SEARCH');
+  final cerdelete = dotenv.get('API_URL_DELETE');
   final color = const Color.fromARGB(255, 0, 102, 185);
   @override
   void initState() {
@@ -166,7 +168,7 @@ class _HomeState extends State<Home> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
-  void showOptions(BuildContext context) {
+  void showOptions(BuildContext context, String id) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -190,10 +192,18 @@ class _HomeState extends State<Home> {
                   // Handle delete action
                   var title = "Delete?";
                   var message = "Do you want to delete this data?";
-                  bool res = await dialog2(context, title, message);
-                  if (res) {
-                    // ignore: use_build_context_synchronously
-                    Navigator.pop(context); // Close the dialog
+                  bool? res = await dialog2(context, title, message);
+                  if (res == true) {
+                    logger.d(res);
+                    var url = Uri.parse(apiurl + cerdelete + id);
+
+                    var resp = await http.delete(url);
+                    if (resp.statusCode == 200) {
+                      // ignore: use_build_context_synchronously
+                      Navigator.pop(context); // Close the dialog
+                    } else {
+                      logger.d(resp.body);
+                    }
                   }
                 },
               ),
@@ -310,10 +320,11 @@ class _HomeState extends State<Home> {
                           onRefresh: () async {
                             // Replace this delay with the code to be executed during refresh
                             // and return a Future when code finishes execution.
-                            nodata = false;
-
-                            cardata = [];
-                            page = 1;
+                            setState(() {
+                              nodata = false;
+                              cardata = [];
+                              page = 1;
+                            });
                             await getcars();
                             // return Future<void>.delayed(const Duration(seconds: 3));
                           },
@@ -359,7 +370,7 @@ class _HomeState extends State<Home> {
                                         ),
                                         child: InkWell(
                                           onLongPress: () =>
-                                              showOptions(context),
+                                              showOptions(context, car["_id"]),
                                           onTap: () {
                                             Navigator.push(
                                               context,
