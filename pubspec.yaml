@@ -49,10 +49,8 @@ dependencies:
   permission_handler: ^10.4.3
   photo_view: ^0.14.0
   flutter_animated_dialog: ^2.0.1
-  flutter_form_builder: ^9.1.0
   image_picker: ^1.0.1
   multi_image_picker: ^4.8.01
-  camera: ^0.10.5+2
 
 dev_dependencies:
   flutter_test:

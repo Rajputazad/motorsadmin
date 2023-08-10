@@ -7,6 +7,8 @@ import 'package:motorsadmin/tools/toaster.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:motorsadmin/tools/menu.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+
 
 class Info extends StatefulWidget {
   const Info({super.key});
@@ -216,7 +218,10 @@ class _Info extends State<Info> {
     return loding
         ? Container(
             color: Colors.white,
-            child: const Center(child: CircularProgressIndicator()))
+            child:  Center(child:  LoadingAnimationWidget.beat( // LoadingAnimationwidget that call the
+        color: Colors.blue,                          // staggereddotwave animation
+        size: 35,
+      ),))
         : Scaffold(
             appBar: AppBar(
               backgroundColor: const Color.fromARGB(255, 4, 12, 240),
@@ -231,7 +236,10 @@ class _Info extends State<Info> {
             body: _isSubmitting
                 ? Container(
                     color: Colors.white,
-                    child: const Center(child: CircularProgressIndicator()))
+                    child:  Center(child: LoadingAnimationWidget.beat( // LoadingAnimationwidget that call the
+        color: Colors.blue,                          // staggereddotwave animation
+        size: 35,
+      )))
                 : Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Form(

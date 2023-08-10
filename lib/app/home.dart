@@ -1,8 +1,10 @@
 import 'dart:convert';
 // import 'dart:math';
 import 'package:intl/intl.dart';
+import 'package:motorsadmin/auth/token.dart';
 import 'package:motorsadmin/tools/dailog2.dart';
 import 'package:motorsadmin/tools/menu.dart';
+import 'package:motorsadmin/tools/toaster.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -202,13 +204,28 @@ class _HomeState extends State<Home> {
                   if (res == true) {
                     logger.d(res);
                     var url = Uri.parse(apiurl + cerdelete + id);
-
-                    var resp = await http.delete(url);
+                    String? token = await TokenManager.getToken() as String;
+                    var headers = {
+                      'Content-Type': 'application/json',
+                      'authorization': token
+                    };
+                    var resp = await http.delete(
+                      url,
+                      headers: headers,
+                    );
+                    final Map<String, dynamic> responseData =
+                        jsonDecode(resp.body);
                     if (resp.statusCode == 200) {
                       _refreshIndicatorKey.currentState?.show();
                       // ignore: use_build_context_synchronously
+                      showToast(context, Colors.green, responseData["message"]);
+                      // ignore: use_build_context_synchronously
                       Navigator.pop(context); // Close the dialog
                     } else {
+                      // ignore: use_build_context_synchronously
+                      Navigator.pop(context); // Close the dialog
+                      // ignore: use_build_context_synchronously
+                      showToast(context, Colors.red, responseData["message"]);
                       logger.d(resp.body);
                     }
                   }

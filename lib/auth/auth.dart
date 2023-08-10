@@ -1,15 +1,14 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:motorsadmin/auth/token.dart';
 
 class ApiInterceptor extends Interceptor {
   @override
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? token = prefs.getString('token');
+ String? token = await TokenManager.getToken() as String;
 
-    if (token!.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
+    if (token.isNotEmpty) {
+      options.headers['authorization'] = 'Bearer $token';
     } 
 
     handler.next(options);

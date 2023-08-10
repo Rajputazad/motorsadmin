@@ -91,8 +91,8 @@ class _MainDrawerState extends State<MainDrawer> {
           onTap: () async {
             var title = "Logout?";
             var message = "Do you want to log out?";
-            bool res = await dialog2(context, title, message);
-            if (res) {
+            dynamic res = await dialog2(context, title, message);
+            if (res==true) {
               await TokenManager.removeToken();
               // ignore: use_build_context_synchronously
               await Navigator.pushReplacement(context,

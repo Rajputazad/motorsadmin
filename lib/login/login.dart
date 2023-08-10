@@ -6,6 +6,7 @@ import 'package:motorsadmin/tools/toaster.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -201,7 +202,12 @@ class _Login extends State<Login> {
                       // Implement login functionality with mobile number and password
                     },
                     child: isLoading
-                        ? const CircularProgressIndicator() // Show loading indicator
+                        ? LoadingAnimationWidget.prograssiveDots(
+                            // LoadingAnimationwidget that call the
+                            color: const Color.fromARGB(255, 255, 255,
+                                255), // staggereddotwave animation
+                            size: 35,
+                          )
                         : const Text('LOGIN'),
                   ),
                 ],
