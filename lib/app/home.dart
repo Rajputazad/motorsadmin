@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:math';
+// import 'dart:math';
 import 'package:intl/intl.dart';
 import 'package:motorsadmin/tools/dailog2.dart';
 import 'package:motorsadmin/tools/menu.dart';
@@ -58,7 +58,8 @@ class _HomeState extends State<Home> {
   }
 
   late bool add = true;
-  late bool content;
+  late bool content = false;
+  // late bool nodata = false;
 
   final ScrollController _scrollController = ScrollController();
   void _scrollListener() async {
@@ -98,10 +99,15 @@ class _HomeState extends State<Home> {
 
           cardata = cardata + jsonData.cast<Map<String, dynamic>>();
           // cardata = cardata.reversed.toList();
-
+          if (cardata.isEmpty && page == 1) {
+            nodata = true;
+          } else {
+            nodata = false;
+          }
           if (data["data"].length == 0) {
             setState(() {
               add = false;
+              // nodata = true;
             });
           } else {
             setState(() {
@@ -199,6 +205,7 @@ class _HomeState extends State<Home> {
 
                     var resp = await http.delete(url);
                     if (resp.statusCode == 200) {
+                      _refreshIndicatorKey.currentState?.show();
                       // ignore: use_build_context_synchronously
                       Navigator.pop(context); // Close the dialog
                     } else {
