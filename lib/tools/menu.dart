@@ -48,7 +48,7 @@ class _MainDrawerState extends State<MainDrawer> {
                   //   ),
                   // ),
                   SizedBox(
-                    // width: 200,
+                    height: 140,
                     child: ClipRRect(
                       child: Image.network(
                           "https://ik.imagekit.io/b4x27zdza/Uday_Motors/logo4.png?updatedAt=1692080640756"),

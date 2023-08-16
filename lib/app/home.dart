@@ -1,6 +1,7 @@
 import 'dart:convert';
 // import 'dart:math';
 import 'package:intl/intl.dart';
+import 'package:motorsadmin/app/update.dart';
 import 'package:motorsadmin/auth/token.dart';
 import 'package:motorsadmin/tools/dailog2.dart';
 import 'package:motorsadmin/tools/menu.dart';
@@ -58,7 +59,7 @@ class _HomeState extends State<Home> {
   bool showContainer = true;
 
   void dely() {
-    Future.delayed(const Duration(seconds: 8), () {
+    Future.delayed(const Duration(seconds: 2), () {
       setState(() {
         showContainer = false;
       });
@@ -99,7 +100,7 @@ class _HomeState extends State<Home> {
         var pag = page.toString();
         var url = Uri.parse(apiurl + getcar + pag);
 
-        logger.d(url);
+        // logger.d(url);
         var result = await http.get(url);
         if (result.statusCode == 200) {
           var data = jsonDecode(result.body);
@@ -200,7 +201,11 @@ class _HomeState extends State<Home> {
                 title: const Text('Edit'),
                 onTap: () {
                   // Handle edit action
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              Update(id: id))); // Close the dialog
                 },
               ),
               ListTile(
@@ -421,7 +426,9 @@ class _HomeState extends State<Home> {
                                             child: Row(
                                               children: [
                                                 showContainer
-                                                    ? Expanded(
+                                                    ? SizedBox(
+                                                        width: 141,
+                                                        height: 100,
                                                         child:
                                                             Shimmer.fromColors(
                                                           baseColor:
