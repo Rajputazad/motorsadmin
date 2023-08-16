@@ -159,7 +159,7 @@ class _Update extends State<Update> {
     // logger.d(_selectedImages.isEmpty);
     try {
       var uri = Uri.parse(apiurl + cerupdate + widget.id);
-      ;
+      
 
       // Add car details to the request
       String? token = await TokenManager.getToken() as String;
