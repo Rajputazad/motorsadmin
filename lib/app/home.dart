@@ -12,6 +12,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:logger/logger.dart';
 import 'package:http/http.dart' as http;
 import 'package:motorsadmin/app/car.dart';
+import 'package:connectivity/connectivity.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -42,6 +43,11 @@ class _HomeState extends State<Home> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<bool> checkInternetConnectivity() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    return connectivityResult != ConnectivityResult.none;
   }
 
   String formatAmountInRupees(double amount) {
@@ -86,52 +92,56 @@ class _HomeState extends State<Home> {
 
   int page = 1;
   Future getcars() async {
-    try {
-      var pag = page.toString();
-      var url = Uri.parse(apiurl + getcar + pag);
+    bool isConnected = await checkInternetConnectivity();
 
-      logger.d(url);
-      var result = await http.get(url);
-      if (result.statusCode == 200) {
-        var data = jsonDecode(result.body);
+    if (isConnected) {
+      try {
+        var pag = page.toString();
+        var url = Uri.parse(apiurl + getcar + pag);
 
+        logger.d(url);
+        var result = await http.get(url);
+        if (result.statusCode == 200) {
+          var data = jsonDecode(result.body);
+
+          setState(() {
+            loding = false;
+            var jsonData = data["data"];
+
+            cardata = cardata + jsonData.cast<Map<String, dynamic>>();
+            // cardata = cardata.reversed.toList();
+            if (cardata.isEmpty && page == 1) {
+              nodata = true;
+            } else {
+              nodata = false;
+            }
+            if (data["data"].length == 0) {
+              setState(() {
+                add = false;
+                // nodata = true;
+              });
+            } else {
+              setState(() {
+                add = true;
+              });
+
+              // logger.d(data["data"].length == 0);
+            }
+          });
+        }
+      } on Exception catch (e) {
         setState(() {
-          loding = false;
-          var jsonData = data["data"];
-
-          cardata = cardata + jsonData.cast<Map<String, dynamic>>();
-          // cardata = cardata.reversed.toList();
-          if (cardata.isEmpty && page == 1) {
-            nodata = true;
-          } else {
-            nodata = false;
-          }
-          if (data["data"].length == 0) {
-            setState(() {
-              add = false;
-              // nodata = true;
-            });
-          } else {
-            setState(() {
-              add = true;
-            });
-
-            // logger.d(data["data"].length == 0);
-          }
+          loding = true;
         });
+        // ignore: use_build_context_synchronously
+        showToast(context, Colors.red, e.toString());
+
+        logger.d(e);
       }
-    } on Exception catch (e) {
-      setState(() {
-        loding = true;
-      });
-      // ignore: use_build_context_syn'chronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        // ignore: prefer_interpolation_to_compose_strings
-        const SnackBar(
-            content: Text(
-                "Please check your internet connection and restart the app.")),
-      );
-      logger.d(e);
+    } else {
+      // ignore: use_build_context_synchronously
+      showToast(
+          context, Colors.red, "Check your internet connection and try again");
     }
     // logger.d(apiurl);
     // print(apiurl);
@@ -256,8 +266,7 @@ class _HomeState extends State<Home> {
             isDashboardScreen: true, isCarScreen: false, isInfoScreen: false),
       ),
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(
-            255, 4, 12, 240), // Replace with your desired app bar color
+        backgroundColor: color, // Replace with your desired app bar color
         // title: const Text('My App'),
         elevation: 0.1,
         actions: [
@@ -407,7 +416,7 @@ class _HomeState extends State<Home> {
                                           child: SizedBox(
                                             // color: Colors.amber,
                                             width: 410,
-                                            height: 80,
+                                            height: 100,
                                             // child: Expanded(
                                             child: Row(
                                               children: [
@@ -437,7 +446,7 @@ class _HomeState extends State<Home> {
                                                         ),
                                                       )
                                                     : SizedBox(
-                                                        height: 80,
+                                                        height: 100,
                                                         width: 141,
                                                         child: ClipRRect(
                                                           borderRadius:
@@ -450,7 +459,10 @@ class _HomeState extends State<Home> {
                                                               ? Image.network(
                                                                   car["imagedetails"]
                                                                           [0]
-                                                                      ["url"])
+                                                                      ["url"],
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                )
                                                               : Image.asset(
                                                                   'assets/images/1.jpeg'), // Replace with your image asset path
                                                         ),

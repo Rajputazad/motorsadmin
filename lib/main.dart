@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Motors Admin",
+      title: "Gajanand motors",
       home: FutureBuilder<bool>(
         future: checkvailid(),
         builder: (context, snapshot) {

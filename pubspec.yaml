@@ -51,6 +51,9 @@ dependencies:
   flutter_animated_dialog: ^2.0.1
   image_picker: ^1.0.1
   multi_image_picker: ^4.8.01
+  device_info_plus: ^9.0.3
+  connectivity: ^3.0.6
+  file_picker: ^5.3.3
 
 dev_dependencies:
   flutter_test:

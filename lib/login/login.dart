@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:connectivity/connectivity.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:motorsadmin/app/home.dart';
 import 'package:motorsadmin/auth/token.dart';
 import 'package:motorsadmin/tools/toaster.dart';
@@ -15,6 +18,8 @@ class Login extends StatefulWidget {
 }
 
 class _Login extends State<Login> {
+  final apiurl = dotenv.get('API_URL');
+  final login = dotenv.get('API_URL_LOGIN');
   final _formKey = GlobalKey<FormState>();
   TextEditingController mobileNumberController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -41,6 +46,10 @@ class _Login extends State<Login> {
     super.dispose();
   }
 
+  Future<bool> checkInternetConnectivity() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    return connectivityResult != ConnectivityResult.none;
+  }
   // void check() async {
   //   final prefs = await SharedPreferences.getInstance();
   //   var sp = prefs.getString("token");
@@ -55,56 +64,64 @@ class _Login extends State<Login> {
   // }
 
   Future<void> loginUser() async {
-    setState(() {
-      isLoading = true; // Set loading to true when login starts
-    });
-    // Replace with your actual API endpoint for login
-    // check();
-    final loginData = {
-      'mobile': mobileNumberController.text.trim(),
-      'password': passwordController.text,
-    };
-    var body = jsonEncode(loginData);
-    // logger.d(body);
-    var headers = {
-      'Content-Type': 'application/json',
-    };
-    try {
-      var url = Uri.parse('https://motors-c9hk.onrender.com/login');
-      final response = await http.post(url, headers: headers, body: body);
-      // logger.d(response.body);
-      if (response.statusCode == 200) {
-        setState(() {
-          isLoading = false;
-        });
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        final String token = responseData['token'];
-        await TokenManager.setToken("Bearer $token");
-        // ignore: use_build_context_synchronously
-        showToast(context, Colors.green, responseData["message"]);
-        // ignore: use_build_context_synchronously
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    const Home())); // Replace '/home' with your home page route
-      } else {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        setState(() {
-          isLoading = false;
-        });
+    bool isConnected = await checkInternetConnectivity();
 
+    if (isConnected) {
+      setState(() {
+        isLoading = true; // Set loading to true when login starts
+      });
+      // Replace with your actual API endpoint for login
+      // check();
+      final loginData = {
+        'mobile': mobileNumberController.text.trim(),
+        'password': passwordController.text,
+      };
+      var body = jsonEncode(loginData);
+      // logger.d(body);
+      var headers = {
+        'Content-Type': 'application/json',
+      };
+      try {
+        var url = Uri.parse(apiurl + login);
+        final response = await http.post(url, headers: headers, body: body);
+        // logger.d(response.body);
+        if (response.statusCode == 200) {
+          setState(() {
+            isLoading = false;
+          });
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          final String token = responseData['token'];
+          await TokenManager.setToken("Bearer $token");
+          // ignore: use_build_context_synchronously
+          showToast(context, Colors.green, responseData["message"]);
+          // ignore: use_build_context_synchronously
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (context) =>
+                      const Home())); // Replace '/home' with your home page route
+        } else {
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          setState(() {
+            isLoading = false;
+          });
+
+          // ignore: use_build_context_synchronously
+          showToast(context, Colors.red, responseData["message"]);
+        }
+      } catch (e) {
+        // Error occurred during login
         // ignore: use_build_context_synchronously
-        showToast(context, Colors.red, responseData["message"]);
+        showToast(context, Colors.red, e.toString());
+        setState(() {
+          isLoading = false;
+        });
+        logger.d('Error: $e');
       }
-    } catch (e) {
-      // Error occurred during login
+    } else {
+      // ignore: use_build_context_synchronously
       showToast(
           context, Colors.red, "Check your internet connection and try again");
-      setState(() {
-        isLoading = false;
-      });
-      logger.d('Error: $e');
     }
   }
 
@@ -158,6 +175,7 @@ class _Login extends State<Login> {
                       controller: mobileNumberController,
                       keyboardType:
                           TextInputType.phone, // Show numeric keyboard
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       decoration: const InputDecoration(
                         labelText:
                             'Mobile Number', // Label for mobile number input

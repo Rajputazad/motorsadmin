@@ -139,7 +139,7 @@ class _CardetailsState extends State<Cardetails> {
   late double? _progress;
 
   Future<void> _downloadImage() async {
-    if (await Permission.storage.request().isGranted) {
+    if (await Permission.storage.request().isGranted|| await Permission.photos.request().isGranted ) {
       // Permission granted. You can now save files to external storage.
       //  logger.d(images[0]);
       try {

@@ -1,6 +1,9 @@
 // import 'dart:convert';
-import 'dart:typed_data';
+// import 'dart:convert';// import 'package:device_info_plus/device_info_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:motorsadmin/auth/token.dart';
 import 'package:motorsadmin/tools/toaster.dart';
@@ -8,7 +11,11 @@ import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:motorsadmin/tools/menu.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:connectivity/connectivity.dart';
+import 'dart:io';
 
+import 'package:url_launcher/url_launcher.dart';
 
 class Info extends StatefulWidget {
   const Info({super.key});
@@ -40,18 +47,12 @@ class _Info extends State<Info> {
   @override
   void initState() {
     super.initState();
-    // setState(() {
-    //   length = _selectedImages.length as String;
-    // });
-    // _initializeCamera();
-    // _checkValidityAndNavigate();
   }
 
-  // Future<void> _checkValidityAndNavigate() async {
-  //   setState(() {
-  //     loding = false;
-  //   });
-  // }
+  Future<bool> checkInternetConnectivity() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    return connectivityResult != ConnectivityResult.none;
+  }
 
   // Future<void> _selectImageSource() async {
   //   showDialog(
@@ -85,26 +86,82 @@ class _Info extends State<Info> {
   //   );
   // }
 
-  void _selectImages() async {
-    _selectedImages = [];
-    List<Asset> resultList = [];
-    try {
-      resultList = await MultiImagePicker.pickImages(
-        maxImages: 20, // Set the maximum number of images the user can select
-        enableCamera: true,
-      );
-    } on Exception catch (e) {
-      // Handle the exception if any
-      logger.d('Error selecting images: $e');
+  // DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+//   void _selectImages() async {
+// // AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+//     final PermissionStatus status = await Permission.camera.request();
+// // if (androidInfo.version.sdkInt >= 33) {
+//     // final PermissionStatus isVideosPermission =
+//     //     await Permission.videos.request();
+//     final PermissionStatus isPhotosPermission =
+//         await Permission.photos.request();
+//     await Permission.storage.request();
+//     logger.d(isVideosPermission);
+//     logger.d(isPhotosPermission);
+// // }
+// // PermissionStatus status = await Permission.storage.request();
+//     if (status.isGranted) {
+//       // Camera permission granted, you can now access the camera
+
+//       _selectedImages = [];
+//       List<Asset> resultList = [];
+//       try {
+//         resultList = await MultiImagePicker.pickImages(
+//           maxImages: 20, // Set the maximum number of images the user can select
+//           enableCamera: true,
+//         );
+//       } on Exception catch (e) {
+//         // Handle the exception if any
+//         logger.d('Error selecting images: $e');
+//       }
+
+//       if (!mounted) return;
+
+//       setState(() {
+//         logger.d(resultList.length);
+//         _selectedImages = resultList;
+//         length = (resultList.length).toString();
+//       });
+//     } else {
+//       // ignore: use_build_context_synchronously
+//       showToast(context, Colors.red, "permission denied for camera");
+
+//       // Handle permission denied
+//     }
+//   }
+
+  List<String> imagePaths = [];
+  Future<void> _selectImages() async {
+    // final PermissionStatus isPhotosPermission =
+    if (await Permission.storage.request().isGranted ||
+        await Permission.photos.request().isGranted) {
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: true,
+        );
+
+        if (result != null && result.files.isNotEmpty) {
+          List<String> paths = result.files
+              .where((file) => file.path != null)
+              .map((file) => file.path!)
+              .toList();
+          imagePaths = paths;
+          setState(() {
+            // logger.d(resultList.length);
+            // _selectedImages = resultList;
+            length = (imagePaths.length).toString();
+          });
+          // Send the images to the backend
+          // await sendImagesToBackend(paths);
+        }
+      } catch (e) {
+        logger.d("Error picking/sending images: $e");
+      }
+    } else {
+      // ignore: use_build_context_synchronously
+      showToast(context, Colors.red, "permission denied");
     }
-
-    if (!mounted) return;
-
-    setState(() {
-      logger.d(resultList.length);
-      _selectedImages = resultList;
-      length = (resultList.length).toString();
-    });
   }
 
   bool _isFormValid() {
@@ -113,11 +170,14 @@ class _Info extends State<Info> {
     return _fbKey.currentState?.validate() ?? false;
   }
 
+  final apiurl = dotenv.get('API_URL');
+  final cerupdate = dotenv.get('API_URL_UPLOAD');
+
   void _submitForm() async {
-    const apiUrl = 'https://motors-c9hk.onrender.com/upload';
+    var apiUrl = apiurl + cerupdate;
     // logger.d(_selectedImages.isEmpty);
     try {
-      if (_selectedImages.isNotEmpty) {
+      if (imagePaths.isNotEmpty) {
         setState(() {
           _isSubmitting = true;
         });
@@ -129,17 +189,23 @@ class _Info extends State<Info> {
         request.headers['authorization'] = token;
         request.headers['Content-Type'] = 'application/json';
 
-        for (var i = 0; i < _selectedImages.length; i++) {
-          var asset = _selectedImages[i];
-          ByteData byteData = await asset.getByteData();
-          List<int> imageData = byteData.buffer.asUint8List();
+        // for (var i = 0; i < _selectedImages.length; i++) {
+        //   var asset = _selectedImages[i];
+        //   ByteData byteData = await asset.getByteData();
+        //   List<int> imageData = byteData.buffer.asUint8List();
 
-          var multipartFile = http.MultipartFile.fromBytes(
-            'images',
-            imageData,
-            filename: 'image$i.jpg',
+        //   var multipartFile = http.MultipartFile.fromBytes(
+        //     'images',
+        //     imageData,
+        //     filename: 'image$i.jpg',
+        //   );
+        //   request.files.add(multipartFile);
+        // }
+        for (String imagePath in imagePaths) {
+          File imageFile = File(imagePath);
+          request.files.add(
+            await http.MultipartFile.fromPath('images', imageFile.path),
           );
-          request.files.add(multipartFile);
         }
         request.fields['carname'] = carname.text;
         request.fields['model'] = model.text;
@@ -178,15 +244,15 @@ class _Info extends State<Info> {
           numberplate.clear();
           price.clear();
           description.clear();
-          _selectedImages = [];
+          imagePaths = [];
           length = "0";
           setState(() {
             _isSubmitting = false;
           });
 
-        // ignore: use_build_context_synchronously
-        showToast(context, Colors.green, "Car details submitted successfully");
-        
+          // ignore: use_build_context_synchronously
+          showToast(
+              context, Colors.green, "Car details submitted successfully");
         } else {
           logger.d('Error: ${response.reasonPhrase}');
         }
@@ -218,13 +284,16 @@ class _Info extends State<Info> {
     return loding
         ? Container(
             color: Colors.white,
-            child:  Center(child:  LoadingAnimationWidget.beat( // LoadingAnimationwidget that call the
-        color: Colors.blue,                          // staggereddotwave animation
-        size: 35,
-      ),))
+            child: Center(
+              child: LoadingAnimationWidget.beat(
+                // LoadingAnimationwidget that call the
+                color: Colors.blue, // staggereddotwave animation
+                size: 35,
+              ),
+            ))
         : Scaffold(
             appBar: AppBar(
-              backgroundColor: const Color.fromARGB(255, 4, 12, 240),
+              backgroundColor: const Color.fromARGB(255, 0, 102, 185),
               title: const Text("Information"),
             ),
             drawer: Drawer(
@@ -236,10 +305,12 @@ class _Info extends State<Info> {
             body: _isSubmitting
                 ? Container(
                     color: Colors.white,
-                    child:  Center(child: LoadingAnimationWidget.beat( // LoadingAnimationwidget that call the
-        color: Colors.blue,                          // staggereddotwave animation
-        size: 35,
-      )))
+                    child: Center(
+                        child: LoadingAnimationWidget.beat(
+                      // LoadingAnimationwidget that call the
+                      color: Colors.blue, // staggereddotwave animation
+                      size: 35,
+                    )))
                 : Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Form(
@@ -251,6 +322,8 @@ class _Info extends State<Info> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             TextFormField(
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               controller: carname,
                               decoration:
                                   const InputDecoration(labelText: 'Car Name'),
@@ -263,6 +336,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: model,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration:
                                   const InputDecoration(labelText: 'Car Model'),
                               validator: (value) {
@@ -277,6 +352,11 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               controller: kilometers,
                               decoration: const InputDecoration(
                                   labelText: 'Kilometers'),
@@ -292,6 +372,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: service,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
                                   labelText: 'Last service'),
                               validator: (value) {
@@ -306,6 +388,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: registration,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
                                   labelText: 'Registration'),
                               validator: (value) {
@@ -320,6 +404,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: owner,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration:
                                   const InputDecoration(labelText: 'Ownerl'),
                               validator: (value) {
@@ -334,8 +420,10 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: fuel,
-                              decoration:
-                                  const InputDecoration(labelText: 'Fuel'),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                              decoration: const InputDecoration(
+                                  labelText: 'Fuel petrol/diesel/CNG/other'),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter the fuel type.';
@@ -348,8 +436,10 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: transmission,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
-                                  labelText: 'Transmission'),
+                                  labelText: 'Transmission-Manual/Auto'),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return 'Please enter the transmission Manual/Auto.';
@@ -362,6 +452,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: insurance,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration:
                                   const InputDecoration(labelText: 'Insurance'),
                               validator: (value) {
@@ -376,6 +468,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: numberplate,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
                                   labelText: 'Numberplate'),
                               validator: (value) {
@@ -390,7 +484,12 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
                               controller: price,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration:
                                   const InputDecoration(labelText: 'Price'),
                               validator: (value) {
@@ -405,6 +504,8 @@ class _Info extends State<Info> {
                             ),
                             TextFormField(
                               controller: description,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                               decoration: const InputDecoration(
                                   labelText: 'Description'),
                               validator: (value) {
@@ -421,7 +522,17 @@ class _Info extends State<Info> {
                               height: 16,
                             ),
                             ElevatedButton(
-                              onPressed: _selectImages,
+                              onPressed: () async {
+                                // var url = 'https://photos.app.goo.gl/ymM';
+                                // if (await canLaunch(url)) {
+                                _selectImages();
+                                //   await launch(url);
+                                // } else {
+                                //   var playStoreUrl =
+                                //       'https://play.google.com/store/apps/details?id=com.google.android.apps.photos';
+                                //   await launch(playStoreUrl);
+                                // }
+                              },
                               child: const Text('Pick Car Image'),
                             ),
                             SizedBox(child: Text("$length images selected")),
