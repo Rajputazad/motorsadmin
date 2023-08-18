@@ -64,7 +64,7 @@ class _CardetailsState extends State<Cardetails> {
   bool loding = true;
   dynamic cardetals;
   late List<String> images = [];
-  car(id) async {
+  Future<void>car(id) async {
     var url = Uri.parse(apiurl + getcar + id);
     try {
       var res = await http.get(url);
