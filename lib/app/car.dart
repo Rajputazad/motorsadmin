@@ -177,7 +177,8 @@ class _CardetailsState extends State<Cardetails> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(builder: (context, snapshot) {
+    // return FutureBuilder(builder: (context, snapshot) {
+      //  future: car(widget.id), 
       if (loding == true) {
         // While the future is still loading
         return Container(
@@ -746,6 +747,6 @@ class _CardetailsState extends State<Cardetails> {
 
         // ]),
       }
-    });
+    // });
   }
 }
