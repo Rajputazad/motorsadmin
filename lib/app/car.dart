@@ -29,6 +29,7 @@ class Cardetails extends StatefulWidget {
 }
 
 class _CardetailsState extends State<Cardetails> {
+   bool down = false;
   final logger = Logger();
   final apiurl = dotenv.get('API_URL');
   final getcar = dotenv.get('API_URL_GETCAR');
@@ -139,6 +140,9 @@ class _CardetailsState extends State<Cardetails> {
   late double? _progress;
 
   Future<void> _downloadImage() async {
+    setState(() {
+      down = true;
+    });
     if (await Permission.storage.request().isGranted|| await Permission.photos.request().isGranted ) {
       // Permission granted. You can now save files to external storage.
       //  logger.d(images[0]);
@@ -149,6 +153,7 @@ class _CardetailsState extends State<Cardetails> {
               onProgress: (name, progress) {
                 setState(() {
                   _progress = progress;
+                    down = false;
                 });
               },
               onDownloadCompleted: (value) {
@@ -264,6 +269,12 @@ class _CardetailsState extends State<Cardetails> {
                               ),
                               // Spacer(),
                               const SizedBox(width: 50),
+                               down
+                                ? const SizedBox(
+                                    width: 30, // Adjust the width as needed
+                                    height: 30,
+                                    child: CircularProgressIndicator())
+                                :
                               IconButton(
                                 icon: const Icon(Icons
                                     .file_download), // Use the appropriate download icon

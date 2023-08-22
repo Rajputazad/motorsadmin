@@ -2,10 +2,12 @@ import 'package:logger/logger.dart';
 import 'package:motorsadmin/auth/token.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Auth {}
 
 Future<bool> checkvailid() async {
+  final apiurl = dotenv.get('API_URL');
   final logger = Logger();
   try {
     // await TokenManager.removeToken();
@@ -16,7 +18,7 @@ Future<bool> checkvailid() async {
         'Content-Type': 'application/json',
         'authorization': token
       };
-      var url = Uri.parse('https://motors-c9hk.onrender.com/home');
+      var url = Uri.parse('${apiurl}home');
       final response = await http.get(
         url,
         headers: headers,
@@ -25,7 +27,7 @@ Future<bool> checkvailid() async {
       if (response.statusCode == 200) {
         return true;
       } else {
-      logger.d(response.body);
+        logger.d(response.body);
         return false;
       }
     } else {
