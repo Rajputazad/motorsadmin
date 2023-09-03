@@ -261,12 +261,15 @@ class _CardetailsState extends State<Cardetails> {
                         child: SizedBox(
                           child: Row(
                             children: [
-                              Text(
+                               SizedBox(
+                              width: 150,
+                              child: SelectableText(
                                 formatAmountInRupees(
                                     double.parse(cardetals["price"])),
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 20),
                               ),
+                            ),
                               // Spacer(),
                               const SizedBox(width: 50),
                                down
@@ -730,7 +733,9 @@ class _CardetailsState extends State<Cardetails> {
                         dynamic result = await dialog(context, title, number);
                         // await dialog(context, title, number);
                         // String telephoneNumber = '+2347012345678';
-                        if (result == "+919998497224") {
+                       if (result == "+919998497224" ||
+                          result == "+919898750901" ||
+                          result == "+917096991347") {
                           String telephoneUrl = "tel:$result";
                           // ignore: deprecated_member_use
                           if (await canLaunch(telephoneUrl)) {
