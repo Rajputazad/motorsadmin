@@ -29,6 +29,7 @@ class Cardetails extends StatefulWidget {
 }
 
 class _CardetailsState extends State<Cardetails> {
+  
    bool down = false;
   final logger = Logger();
   final apiurl = dotenv.get('API_URL');
